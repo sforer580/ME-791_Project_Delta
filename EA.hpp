@@ -54,6 +54,7 @@ void EA::Build_Pop()
         Policy PO;
         indiv.at(0).pol.push_back(PO);
     }
+    assert (indiv.at(0).pol.size() == pP->pop_size);
     cout << indiv.at(0).pol.size() << endl;
     Assign_Weights();
 }
@@ -72,6 +73,7 @@ void EA::Assign_Weights()
             indiv.at(0).pol.at(p).weights.push_back(r);
             cout << r << "\t";
         }
+        assert (indiv.at(0).pol.at(p).weights.size() == pP->num_weights);
         cout << endl;
         cout << endl;
     }
@@ -126,10 +128,12 @@ int EA::Binary_Select()
     if(indiv.at(0).pol.at(index_1).fitness < indiv.at(0).pol.at(index_2).fitness)
     {
         loser = index_2;
+        assert(indiv.at(0).pol.at(index_1).fitness < indiv.at(0).pol.at(index_2).fitness);
     }
     else
     {
         loser = index_1;
+        assert(indiv.at(0).pol.at(index_1).fitness >= indiv.at(0).pol.at(index_2).fitness);
     }
     return loser;
 }
@@ -145,6 +149,7 @@ void EA::Down_Select()
         kill = Binary_Select();
         indiv.at(0).pol.erase(indiv.at(0).pol.begin() + kill);
     }
+    assert(indiv.at(0).pol.size() == pP->pop_size/2);
 }
 
 
@@ -169,6 +174,7 @@ void EA::Replicate()
         Mutation(M);
         indiv.at(0).pol.push_back(M);
     }
+    assert(indiv.at(0).pol.size() == pP->pop_size);
 }
 
 
