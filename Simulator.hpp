@@ -21,7 +21,23 @@ class Simulator
     friend class Policy;
     
 public:
+    Parameters* pP;
+    
+    void Simulate();
     
 };
+
+
+//-----------------------------------------------------------
+//Runs the entire simulation process
+void Simulate()
+{
+    double t=0;
+    while (t<pP->time_max)
+    {
+        
+        t += pP->time_step;
+    }
+}
 
 #endif /* Simulator_hpp */

@@ -21,9 +21,14 @@ class Parameters
     friend class Policy;
     
 public:
+    //EA Parameters
     int pop_size = 2;
     int num_weights = 10;
     int gen_max = 1;
+    
+    //Simulator Parameters
+    double time_max = 1;            //[secodns]
+    double time_step = 0.1;         //[secodns]
     double v = 3.0;
     double dt = 0.2;                //[secodns]
     double T = 5.0;

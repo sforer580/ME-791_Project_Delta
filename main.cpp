@@ -35,6 +35,6 @@ int main()
     Parameters P;
     EA E;
     E.pP = &P;
-    E.build_pop();
+    E.Run_Project_Delta();
     return 0;
 }
