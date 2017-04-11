@@ -55,7 +55,7 @@ void EA::Build_Pop()
         indiv.at(0).pol.push_back(PO);
     }
     assert (indiv.at(0).pol.size() == pP->pop_size);
-    cout << indiv.at(0).pol.size() << endl;
+    cout << "Number of Policies" << "\t" << indiv.at(0).pol.size() << endl;
     Assign_Weights();
 }
 
@@ -66,14 +66,18 @@ void EA::Assign_Weights()
 {
     for (int p=0; p<pP->pop_size; p++)
     {
-        cout << "Policy" << "\t" << p << "\t" << "Weights" << endl;
         for (int w=0; w<pP->num_weights; w++)
         {
             double r = 2*((double)rand()/RAND_MAX)+(-1);
             indiv.at(0).pol.at(p).weights.push_back(r);
-            cout << r << "\t";
         }
         assert (indiv.at(0).pol.at(p).weights.size() == pP->num_weights);
+        
+        cout << "Policy" << "\t" << p << "\t" << "Weights" << "\t" << indiv.at(0).pol.at(p).weights.size() << endl;
+        for (int w=0; w<indiv.at(0).pol.at(p).weights.size(); w++)
+        {
+            cout << indiv.at(0).pol.at(p).weights.at(w) << "\t";
+        }
         cout << endl;
         cout << endl;
     }

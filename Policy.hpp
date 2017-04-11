@@ -23,27 +23,27 @@ class Policy
 public:
     vector<double> weights;
     double fitness;
-    double current_x;
-    double current_y;
-    double current_theta;
-    double current_omega;
-    double current_dist_to_goal;
+    double current_x;                           //[length]
+    double current_y;                           //[length]
+    double current_theta;                       //[radians]
+    double current_omega;                       //[radian/second]
+    double current_dist_to_goal;                //[length]
     double current_u;
-    double new_x;
-    double new_y;
-    double new_theta;
-    double new_omega;
-    double new_dist_to_goal;
+    double new_x;                               //[length]
+    double new_y;                               //[length]
+    double new_theta;                           //[radians]
+    double new_omega;                           //[radians/second]
+    double new_dist_to_goal;                    //[length]
     double new_u;
     
     int in_map = 0;
     
     vector<double> angle_error;
     
-    vector<double> path;
-    vector<double> all_theta;
-    vector<double> all_omega;
-    vector<double> all_dist_to_goal;
+    vector<double> path;                        //[length]
+    vector<double> all_theta;                   //[radians]
+    vector<double> all_omega;                   //[radians/second]
+    vector<double> all_dist_to_goal;            //[length]
     vector<double> all_u;
 };
 

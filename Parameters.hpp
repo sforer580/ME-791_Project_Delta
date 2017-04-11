@@ -23,8 +23,8 @@ class Parameters
     
 public:
     //ANN Parameters
-    int num_inputs = 1;
-    int num_hidden_nodes = 1;
+    int num_inputs = 3;
+    int num_hidden_nodes = 3;
     int num_outputs = 1;
     
     //EA Parameters
@@ -35,13 +35,13 @@ public:
     //Simulator Parameters
     double x_max = 15;
     double y_max = 15;
-    double time_max = 1;            //[secodns]
+    double time_max = 10;           //[secodns]
     double time_step = 0.1;         //[secodns]
-    double v = 3.0;
+    double v = 3.0;                 //[length/second]
     double dt = 0.2;                //[secodns]
-    double T = 5.0;
-    double u_max = 15;
-    double u_min = -15;
+    double T = 5.0;                 //[seconds]
+    double u_max = 15;              //[degree/second]
+    double u_min = -15;             //[degree/second]
     
 };
 

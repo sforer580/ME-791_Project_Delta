@@ -8,6 +8,7 @@
 
 #ifndef Simulator_hpp
 #define Simulator_hpp
+# define Pi           3.14159265358979323846  /* pi */
 
 #include <stdio.h>
 
@@ -72,9 +73,9 @@ void Simulator::Initalize_Goal()
 void Simulator::Initalize_Agent(Policy* pPo)
 {
     pPo->current_x = 1;
-    pPo->current_y = 2;
-    pPo->current_theta = 3;
-    pPo->current_omega = 4;
+    pPo->current_y = 1;
+    pPo->current_theta = Pi/2;
+    pPo->current_omega = 0;
     pPo->current_u = 0;
     
     pPo->new_x = pPo->current_x;
