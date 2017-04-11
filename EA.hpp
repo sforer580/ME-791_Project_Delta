@@ -66,7 +66,7 @@ void EA::Assign_Weights()
 {
     for (int p=0; p<pP->pop_size; p++)
     {
-        cout << "Policy" << "\t" << p << endl;
+        cout << "Policy" << "\t" << p << "\t" << "Weights" << endl;
         for (int w=0; w<pP->num_weights; w++)
         {
             double r = 2*((double)rand()/RAND_MAX)+(-1);
@@ -100,7 +100,9 @@ void EA::Run_Simulation()
     {
         Simulator S;
         S.pP = this->pP;
-        //S.Simulate();
+        Policy* pPo;
+        pPo = & indiv.at(0).pol.at(p);
+        S.Simulate(pPo);
     }
 }
 
@@ -196,7 +198,8 @@ void EA::Run_Project_Delta()
     Build_Pop();
     for (int gen=0; gen<pP->gen_max; gen++)
     {
-        if (gen <= pP->gen_max-1)
+        
+        if (gen < pP->gen_max-1)
         {
             Evalutate();
             sort(indiv.at(0).pol.begin(), indiv.at(0).pol.end(), Less_Than_Policy_Fitness());
@@ -208,6 +211,7 @@ void EA::Run_Project_Delta()
             Evalutate();
             sort(indiv.at(0).pol.begin(), indiv.at(0).pol.end(), Less_Than_Policy_Fitness());
         }
+        
     }
 }
 

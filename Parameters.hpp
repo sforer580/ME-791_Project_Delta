@@ -22,12 +22,19 @@ class Parameters
     friend class neural_network;
     
 public:
+    //ANN Parameters
+    int num_inputs = 1;
+    int num_hidden_nodes = 1;
+    int num_outputs = 1;
+    
     //EA Parameters
-    int pop_size = 2;
-    int num_weights = 10;
+    int pop_size = 1;
+    int num_weights = num_inputs*num_hidden_nodes+num_hidden_nodes*num_outputs;
     int gen_max = 1;
     
     //Simulator Parameters
+    double x_max = 15;
+    double y_max = 15;
     double time_max = 1;            //[secodns]
     double time_step = 0.1;         //[secodns]
     double v = 3.0;
