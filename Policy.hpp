@@ -18,6 +18,7 @@ class Policy
     friend class Simulator;
     friend class Agent;
     friend class Parameters;
+    friend class neural_network;
     
 public:
     vector<double> weights;

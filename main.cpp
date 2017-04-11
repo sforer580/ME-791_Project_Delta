@@ -22,6 +22,7 @@
 #include "Parameters.hpp"
 #include "Policy.hpp"
 #include "Agent.hpp"
+#include "Neural_Network.h"
 #include "EA.hpp"
 #include "Simulator.hpp"
 

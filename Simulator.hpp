@@ -19,6 +19,7 @@ class Simulator
     friend class Parameters;
     friend class Agent;
     friend class Policy;
+    friend class neural_network;
     
 public:
     Parameters* pP;
@@ -32,12 +33,14 @@ public:
 //Runs the entire simulation process
 void Simulate()
 {
+    /*
     double t=0;
     while (t<pP->time_max)
     {
         
         t += pP->time_step;
     }
+     */
 }
 
 #endif /* Simulator_hpp */

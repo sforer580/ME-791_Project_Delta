@@ -21,6 +21,7 @@ class EA
     friend class Simulator;
     friend class Agent;
     friend class Policy;
+    friend class neural_network;
     
     public:
     Parameters* pP;

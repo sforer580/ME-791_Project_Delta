@@ -18,6 +18,7 @@ class Agent
     friend class Simulator;
     friend class Parameters;
     friend class Policy;
+    friend class neural_network;
     
 public:
     vector<Policy> pol;
