@@ -27,9 +27,13 @@ public:
     
     vector<double> goal_1;
     vector<double> goal_2;
+    double goal_length;
+    double goal_angle;
     
     void Initalize_Goal();
+    void Get_Goal_Angle();
     void Initalize_Agent(Policy* pPo);
+    void Get_Angle_Error(Policy* pPo);
     void Get_Distance_to_Goal(Policy* pPo);
     void Calculate_New_X(Policy* pPo);
     void Calculate_New_Y(Policy* pPo);
@@ -65,6 +69,34 @@ void Simulator::Initalize_Goal()
     assert(goal_1.at(1)>=0 && goal_1.at(1)<=pP->y_max);
     assert(goal_2.at(0)>=0 && goal_2.at(0)<=pP->x_max);
     assert(goal_2.at(1)>=0 && goal_2.at(1)<=pP->y_max);
+    Get_Goal_Angle();
+}
+
+
+//-----------------------------------------------------------
+//Gets the angle of the plane for the goal
+void Simulator::Get_Goal_Angle()
+{
+    double A = (goal_2.at(0)-goal_1.at(0))*(goal_2.at(0)-goal_1.at(0));
+    double B = (goal_2.at(1)-goal_1.at(1))*(goal_2.at(1)-goal_1.at(1));
+    goal_length = sqrt(A+B);
+    double C = goal_1.at(0) - goal_2.at(0);
+    double beta;
+    if (C < 0)
+    {
+        double beta = asin(C/goal_length);
+        goal_angle = 360 - beta;
+    }
+    if (C > 0)
+    {
+        double beta = asin(C/goal_length);
+        goal_angle = beta;
+    }
+    if (C == 0)
+    {
+        double beta = asin(C/goal_length);
+        goal_angle = beta;
+    }
 }
 
 
@@ -89,6 +121,14 @@ void Simulator::Initalize_Agent(Policy* pPo)
     pPo->all_theta.push_back(pPo->new_theta);
     pPo->all_omega.push_back(pPo->new_omega);
     pPo->all_u.push_back(pPo->new_u);
+}
+
+
+//-----------------------------------------------------------
+//Gets the angle error for each time step
+void Simulator::Get_Angle_Error(Policy* pPo)
+{
+    
 }
 
 
@@ -127,6 +167,9 @@ void Simulator::Calculate_New_Theta(Policy* pPo)
 void Simulator::Calculate_New_Controller(Policy* pPo)
 {
     pPo->current_u = pPo->new_u;
+    
+    
+    
     pPo->new_u = 0;
     pPo->all_u.push_back(pPo->new_u);
 }
@@ -179,6 +222,10 @@ void Simulator::Output_State_Info(Policy* pPo, double t)
 //Runs the entire simulation process
 void Simulator::Simulate(Policy* pPo)
 {
+    neural_network NN;
+    NN.setup(pP->num_inputs, pP->num_hidden_nodes, pP->num_outputs);
+    NN.set_in_min_max(0, pP->x_max);
+    NN.set_out_min_max(pP->u_min, pP->u_max);
     double t=0;
     int ts=0;
     pPo->in_map = 0;
@@ -188,6 +235,7 @@ void Simulator::Simulate(Policy* pPo)
         {
             Initalize_Goal();
             Initalize_Agent(pPo);
+            Get_Angle_Error(pPo);
             Get_Distance_to_Goal(pPo);
             Output_State_Info(pPo, t);
             Check_If_In_Map(pPo);
@@ -199,6 +247,7 @@ void Simulator::Simulate(Policy* pPo)
             Calculate_New_Theta(pPo);
             Calculate_New_Omega(pPo);
             Get_Distance_to_Goal(pPo);
+            Get_Angle_Error(pPo);
             Output_State_Info(pPo, t);
             Check_If_In_Map(pPo);
         }
