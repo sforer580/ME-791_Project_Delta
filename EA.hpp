@@ -41,7 +41,6 @@ class EA
     void Assign_Weights();
     void Initalize_Agent();
     void Initalize_Goal();
-    void Get_Goal_Angle();
     void Evalutate();
     void Run_Simulation();
     void Get_Fitness();
@@ -68,6 +67,7 @@ void EA::Build_Pop()
     }
     assert (indiv.at(0).pol.size() == pP->pop_size);
     cout << "Number of Policies" << "\t" << indiv.at(0).pol.size() << endl;
+    cout << endl;
     Assign_Weights();
 }
 
@@ -111,36 +111,21 @@ void EA::Get_Fitness()
 
 
 //-----------------------------------------------------------
-//Runs the entire simulation for each policy
-void EA::Run_Simulation()
-{
-    for (int p=0; p<indiv.at(0).pol.size(); p++)
-    {
-        Simulator S;
-        S.pP = this->pP;
-        Policy* pPo;
-        pPo = & indiv.at(0).pol.at(p);
-        S.Simulate(pPo, goal_mid);
-    }
-}
-
-
-//-----------------------------------------------------------
 //Initalizes the agents starting state information
 void EA::Initalize_Agent()
 {
-    double x = 1;
-    double y = 1;
+    double x = 0;
+    double y = 0;
     double theta = 0;
     double omega = 0;
     double u = 0;
     for (int p=0; p<pP->pop_size; p++)
     {
-        indiv.at(0).pol.at(p).current_x = x;
-        indiv.at(0).pol.at(p).current_y = y;
-        indiv.at(0).pol.at(p).current_theta = theta;
-        indiv.at(0).pol.at(p).current_omega = omega;
-        indiv.at(0).pol.at(p).current_u = u;
+        indiv.at(0).pol.at(p).x.push_back(x);
+        indiv.at(0).pol.at(p).y.push_back(y);
+        indiv.at(0).pol.at(p).theta.push_back(theta);
+        indiv.at(0).pol.at(p).omega.push_back(omega);
+        indiv.at(0).pol.at(p).u.push_back(u);
     }
 }
 
@@ -180,33 +165,25 @@ void EA::Initalize_Goal()
     goal_mid.push_back((abs(goal_1.at(1)-goal_2.at(1))/2)+min);
     cout << "Goal_mid Location" << endl;
     cout << goal_mid.at(0) << "\t" << goal_mid.at(1) << endl;
-    //Get_Goal_Angle();
+    cout << endl;
 }
 
+
 //-----------------------------------------------------------
-//Gets the angle of the plane for the goal
-void EA::Get_Goal_Angle()
+//Runs the entire simulation for each policy
+void EA::Run_Simulation()
 {
-    double A = (goal_2.at(0)-goal_1.at(0))*(goal_2.at(0)-goal_1.at(0));
-    double B = (goal_2.at(1)-goal_1.at(1))*(goal_2.at(1)-goal_1.at(1));
-    goal_length = sqrt(A+B);
-    double C = goal_1.at(0) - goal_2.at(0);
-    double beta;
-    if (C < 0)
+    for (int p=0; p<indiv.at(0).pol.size(); p++)
     {
-        double beta = asin(C/goal_length);
-        goal_angle = 2*Pi - beta;
+        cout << "/////////////////////////////////////////////////////////////" << endl;
+        cout << "Policy" << "\t" << p << endl;
+        Simulator S;
+        S.pP = this->pP;
+        Policy* pPo;
+        pPo = & indiv.at(0).pol.at(p);
+        S.Simulate(pPo, goal_mid);
     }
-    if (C > 0)
-    {
-        double beta = asin(C/goal_length);
-        goal_angle = beta;
-    }
-    if (C == 0)
-    {
-        double beta = asin(C/goal_length);
-        goal_angle = beta;
-    }
+    cout << "cp" << endl;
 }
 
 
