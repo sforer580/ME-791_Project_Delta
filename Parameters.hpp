@@ -29,13 +29,15 @@ public:
     
     //EA Parameters
     int pop_size = 1;
-    int num_weights = num_inputs*num_hidden_nodes+num_hidden_nodes*num_outputs;
-    int gen_max = 1;
+    int num_weights;;
+    int gen_max = 2;
+    double mutation_rate = 0.5;
+    double range = 0.5;
     
     //Simulator Parameters
-    double x_max = 15;
-    double y_max = 15;
-    double time_max = 10;           //[secodns]
+    double x_max = 100;             //[length]
+    double y_max = 100;             //[length]
+    double time_max = 50;           //[secodns]
     double time_step = 0.1;         //[secodns]
     double v = 3.0;                 //[length/second]
     double dt = 0.2;                //[secodns]

@@ -27,13 +27,14 @@ public:
     
     vector<double> goal_1;
     vector<double> goal_2;
-    double goal_length;
-    double goal_angle;
+    double goal_length;                 //[length]
+    double goal_angle;                  //[radians]
     
+    void Give_Weights_To_NN(Policy* pPo);
     void Initalize_Goal();
     void Get_Goal_Angle();
-    void Initalize_Agent(Policy* pPo);
-    void Get_Angle_Error(Policy* pPo);
+    void Agent_Set_Up(Policy* pPo);
+    void Get_Angle_Error(Policy* pPo, vector<double> goal_mid);
     void Get_Distance_to_Goal(Policy* pPo);
     void Calculate_New_X(Policy* pPo);
     void Calculate_New_Y(Policy* pPo);
@@ -43,73 +44,28 @@ public:
     void Output_State_Info(Policy* pPo, double t);
     void Check_If_In_Map(Policy* pPo);
     
-    void Simulate(Policy* pPo);
+    void Simulate(Policy* pPo, vector<double> goal_mid);
     
 };
 
 
 //-----------------------------------------------------------
-//Initalizes the goal plane
-void Simulator::Initalize_Goal()
+//Gives the weights to the NN
+void Simulator::Give_Weights_To_NN(Policy* pPo)
 {
-    goal_1.push_back((rand() / double(RAND_MAX))*(pP->x_max));
-    goal_1.push_back((rand() / double(RAND_MAX))*(pP->y_max));
-    
-    goal_2.push_back(goal_1.at(0)+5);
-    if (goal_2.at(0)>pP->x_max)
+    vector<double> user_input;
+    for (int w=0; w<pPo->weights.size(); w++)
     {
-        goal_2.at(0) = goal_1.at(0)-5;
+        user_input.push_back(pPo->weights.at(w));
     }
-    goal_2.push_back(goal_1.at(1)+5);
-    if (goal_2.at(1)>pP->x_max)
-    {
-        goal_2.at(1) = goal_1.at(1)-5;
-    }
-    assert(goal_1.at(0)>=0 && goal_1.at(0)<=pP->x_max);
-    assert(goal_1.at(1)>=0 && goal_1.at(1)<=pP->y_max);
-    assert(goal_2.at(0)>=0 && goal_2.at(0)<=pP->x_max);
-    assert(goal_2.at(1)>=0 && goal_2.at(1)<=pP->y_max);
-    Get_Goal_Angle();
+    //NN.set_weights(user_input, safe);
 }
 
 
 //-----------------------------------------------------------
-//Gets the angle of the plane for the goal
-void Simulator::Get_Goal_Angle()
+//Sets the agent in its initial spot
+void Simulator::Agent_Set_Up(Policy* pPo)
 {
-    double A = (goal_2.at(0)-goal_1.at(0))*(goal_2.at(0)-goal_1.at(0));
-    double B = (goal_2.at(1)-goal_1.at(1))*(goal_2.at(1)-goal_1.at(1));
-    goal_length = sqrt(A+B);
-    double C = goal_1.at(0) - goal_2.at(0);
-    double beta;
-    if (C < 0)
-    {
-        double beta = asin(C/goal_length);
-        goal_angle = 360 - beta;
-    }
-    if (C > 0)
-    {
-        double beta = asin(C/goal_length);
-        goal_angle = beta;
-    }
-    if (C == 0)
-    {
-        double beta = asin(C/goal_length);
-        goal_angle = beta;
-    }
-}
-
-
-//-----------------------------------------------------------
-//Initalizes the agents starting state information
-void Simulator::Initalize_Agent(Policy* pPo)
-{
-    pPo->current_x = 1;
-    pPo->current_y = 1;
-    pPo->current_theta = Pi/2;
-    pPo->current_omega = 0;
-    pPo->current_u = 0;
-    
     pPo->new_x = pPo->current_x;
     pPo->new_y = pPo->current_y;
     pPo->new_theta = pPo->current_theta;
@@ -126,9 +82,480 @@ void Simulator::Initalize_Agent(Policy* pPo)
 
 //-----------------------------------------------------------
 //Gets the angle error for each time step
-void Simulator::Get_Angle_Error(Policy* pPo)
+void Simulator::Get_Angle_Error(Policy* pPo, vector<double> goal_mid)
 {
+    double alpha = 0;
+    double beta = 0;
+    double gamma = 0;
+    double del_x = 0;
+    double del_y = 0;
+    double zeta = 0;
     
+    //above and to the left of goal
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==0)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = Pi-gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = Pi-pPo->new_theta-gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = Pi-pPo->new_theta-gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        alpha = (Pi/2)-gamma;
+        zeta = alpha+(Pi/2);
+        if (pPo->new_theta>zeta)
+        {
+            beta = pPo->new_theta-zeta;
+        }
+        if (pPo->new_theta==zeta)
+        {
+            beta = 0;
+        }
+        if (pPo->new_theta<zeta)
+        {
+            beta = zeta-pPo->new_theta;
+        }
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta-Pi+gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta-Pi+gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        double beta_1 = 0;
+        double beta_2 = 0;
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta_1 = pPo->new_theta-Pi+gamma;
+        beta_2 = (2*Pi)-beta_1;
+        if (beta_1 < beta_2)
+        {
+            beta = beta_1;
+        }
+        else
+        {
+            beta = beta_2;
+        }
+    }
+    
+    //directly above the goal
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==0)
+    {
+        beta = Pi;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        beta = Pi-pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        beta = pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        beta = Pi-pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        beta = 0;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        beta = pPo->new_theta-Pi;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        beta = pPo->new_theta-Pi;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        beta = pPo->new_theta-Pi;
+    }
+    
+    
+    //above and to the right of the goal
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==0)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        alpha = (Pi/2)-gamma;
+        beta = (Pi/2)+alpha;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        double beta_1 = 0;
+        double beta_2 = 0;
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta_1 = Pi-pPo->new_theta+gamma;
+        beta_2 = (2*Pi)-beta_1;
+        if (beta_1 < beta_2)
+        {
+            beta = beta_1;
+        }
+        else
+        {
+            beta = beta_2;
+        }
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = (Pi/2)+gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = Pi-pPo->new_theta+gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        zeta = Pi+gamma;
+        if (pPo->new_theta<zeta)
+        {
+            beta = zeta-pPo->new_theta;
+        }
+        if (pPo->new_theta==zeta)
+        {
+            beta = 0;
+        }
+        if (pPo->new_theta>zeta)
+        {
+            beta = pPo->new_theta-zeta;
+        }
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta-Pi-gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y>goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta-Pi-gamma;
+    }
+    
+    //directly to the right of the goal
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==0)
+    {
+        beta = Pi/2;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        beta = Pi/2+pPo->new_theta;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        beta = Pi;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        beta = Pi/2+pPo->new_theta;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        beta = Pi/2;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        beta = (3*Pi/2)-pPo->new_theta;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        beta = 0;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        beta = (2*Pi)-pPo->new_theta;
+    }
+    
+    //below and to the right of the goal
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==0)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta+gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta+gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        double beta_1 = 0;
+        double beta_2 = 0;
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta_1 = pPo->new_theta+gamma;
+        beta_2 = (2*Pi)-beta_1;
+        if (beta_1 < beta_2)
+        {
+            beta = beta_1;
+        }
+        else
+        {
+            beta = beta_2;
+        }
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = Pi-gamma;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        alpha = (Pi/2)-gamma;
+        beta = (3*Pi/2)-pPo->new_theta+alpha;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        alpha = (Pi/2)-gamma;
+        beta = alpha;
+    }
+    if (pPo->new_x>goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        alpha = (Pi/2)-gamma;
+        zeta = (3*Pi/2)+alpha;
+        if (pPo->new_theta<zeta)
+        {
+            beta = zeta-pPo->new_theta;
+        }
+        if (pPo->new_theta==zeta)
+        {
+            beta = 0;
+        }
+        if (pPo->new_theta>zeta)
+        {
+            beta = pPo->new_theta-zeta;
+        }
+    }
+    
+    //directly below the goal
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==0)
+    {
+        beta = 0;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        beta = pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        beta = pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        beta = pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        beta = pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        beta = (2*Pi)-pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        beta = (2*Pi)-pPo->new_theta;
+    }
+    if (pPo->new_x==goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        beta = (2*Pi)-pPo->new_theta;
+    }
+    
+    //below and to the left of the goal
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==0)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        zeta = gamma;
+        if (pPo->new_theta<zeta)
+        {
+            beta = zeta-pPo->new_theta;
+        }
+        if (pPo->new_theta==zeta)
+        {
+            beta = 0;
+        }
+        if (pPo->new_theta>zeta)
+        {
+            beta = pPo->new_theta-zeta;
+        }
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta-gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta-gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = pPo->new_theta-gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        double beta_1 = 0;
+        double beta_2 = 0;
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta_1 = pPo->new_theta-gamma;
+        beta_2 = (2*Pi)-beta_1;
+        if (beta_1 < beta_2)
+        {
+            beta = beta_1;
+        }
+        else
+        {
+            beta = beta_2;
+        }
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        beta = (Pi/2)+gamma;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y<goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        del_x = abs(pPo->new_x-goal_mid.at(0));
+        del_y= abs(pPo->new_y-goal_mid.at(1));
+        gamma = atan(del_x/del_y);
+        alpha = (Pi/2)-gamma;
+        beta = (2*Pi)-pPo->new_theta+gamma;
+    }
+    
+    //directly to the left of the goal
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==0)
+    {
+        beta = Pi/2;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>0 && pPo->new_theta<Pi/2)
+    {
+        beta = (Pi/2)-pPo->new_theta;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==Pi/2)
+    {
+        beta = 0;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>Pi/2 && pPo->new_theta<Pi)
+    {
+        beta = (Pi/2)-pPo->new_theta;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==Pi)
+    {
+        beta = Pi/2;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>Pi && pPo->new_theta<3*Pi/2)
+    {
+        beta = pPo->new_theta-(2*Pi);
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta==3*Pi/2)
+    {
+        beta = Pi;
+    }
+    if (pPo->new_x<goal_mid.at(0) && pPo->new_y==goal_mid.at(1) && pPo->new_theta>3*Pi/2 && pPo->new_theta<2*Pi)
+    {
+        beta = (5*Pi/2)-pPo->new_theta;
+    }
 }
 
 
@@ -167,8 +594,15 @@ void Simulator::Calculate_New_Theta(Policy* pPo)
 void Simulator::Calculate_New_Controller(Policy* pPo)
 {
     pPo->current_u = pPo->new_u;
+    vector<double> a;
+    a.push_back(pPo->current_x);
+    a.push_back(pPo->current_y);
+    a.push_back(pPo->current_theta);
+    a.push_back(pPo->current_omega);
     
-    
+    //NN.set_vector_input(a);
+    //pPo->new_u = NN.execute();
+    a.clear();
     
     pPo->new_u = 0;
     pPo->all_u.push_back(pPo->new_u);
@@ -214,18 +648,18 @@ void Simulator::Output_State_Info(Policy* pPo, double t)
     cout << "Current Time" << "\t" << t << endl;
     cout << "New X" << "\t" << "New Y" << "\t" << "New Theta" << "\t" << "New Omega" << "\t" << "New U" << endl;
     cout << pPo->new_x << "\t" << pPo->new_y << "\t" << pPo->new_theta << "\t" << pPo->new_omega << "\t" << pPo->new_u << endl;
-    
 }
 
 
 //-----------------------------------------------------------
 //Runs the entire simulation process
-void Simulator::Simulate(Policy* pPo)
+void Simulator::Simulate(Policy* pPo, vector<double> goal_mid)
 {
     neural_network NN;
     NN.setup(pP->num_inputs, pP->num_hidden_nodes, pP->num_outputs);
     NN.set_in_min_max(0, pP->x_max);
     NN.set_out_min_max(pP->u_min, pP->u_max);
+    Give_Weights_To_NN(pPo);
     double t=0;
     int ts=0;
     pPo->in_map = 0;
@@ -233,21 +667,20 @@ void Simulator::Simulate(Policy* pPo)
     {
         if (t==0)
         {
-            Initalize_Goal();
-            Initalize_Agent(pPo);
-            Get_Angle_Error(pPo);
+            Agent_Set_Up(pPo);
+            Get_Angle_Error(pPo, goal_mid);
             Get_Distance_to_Goal(pPo);
             Output_State_Info(pPo, t);
             Check_If_In_Map(pPo);
         }
         if (t>0)
         {
+            Get_Angle_Error(pPo, goal_mid);
             Calculate_New_X(pPo);
             Calculate_New_Y(pPo);
             Calculate_New_Theta(pPo);
             Calculate_New_Omega(pPo);
             Get_Distance_to_Goal(pPo);
-            Get_Angle_Error(pPo);
             Output_State_Info(pPo, t);
             Check_If_In_Map(pPo);
         }
@@ -256,7 +689,7 @@ void Simulator::Simulate(Policy* pPo)
             break;
         }
         ts += 1;
-        t += pP->time_step;
+        t += pP->dt;
     }
 }
 
