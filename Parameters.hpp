@@ -23,7 +23,7 @@ class Parameters
     
 public:
     //ANN Parameters
-    int num_inputs = 3;
+    int num_inputs = 5;
     int num_hidden_nodes = 3;
     int num_outputs = 1;
     
@@ -37,6 +37,7 @@ public:
     //Simulator Parameters
     double x_max = 100;             //[length]
     double y_max = 100;             //[length]
+    double goal_length = 10;        //[length]
     double time_max = 50;           //[secodns]
     double time_step = 0.1;         //[secodns]
     double v = 3.0;                 //[length/second]

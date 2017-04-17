@@ -29,18 +29,17 @@ class EA
     vector<Agent> indiv;
     
     //EA Functions
-    vector<double> goal_1;
-    vector<double> goal_2;
+    vector<double> goal_line;
     vector<double> goal_mid;
-    double goal_length;
     double goal_angle;
-    
+    vector<double> goal_box;
     
     
     void Build_Pop();
     void Assign_Weights();
     void Initalize_Agent();
     void Initalize_Goal();
+    void Create_Goal_Box();
     void Evalutate();
     void Run_Simulation();
     void Get_Fitness();
@@ -105,8 +104,28 @@ void EA::Get_Fitness()
 {
     for (int p=0; p<indiv.at(0).pol.size(); p++)
     {
-        
+        indiv.at(0).pol.at(p).fitness = 0;
     }
+
+    for (int p=0; p<indiv.at(0).pol.size(); p++)
+    {
+        if (indiv.at(0).pol.at(p).in_map == 0)
+        {
+            indiv.at(0).pol.at(p).fitness = 1000;
+        }
+        for (int ts=0; ts<indiv.at(0).pol.at(p).angle_error.size(); ts++)
+        {
+            indiv.at(0).pol.at(p).fitness += indiv.at(0).pol.at(p).angle_error.at(ts);
+        }
+    }
+    
+    cout << "Population Fitness" << endl;
+    for (int p=0; p<indiv.at(0).pol.size(); p++)
+    {
+        cout << "Policy" << "\t" << indiv.at(0).pol.at(p).fitness << "\t";
+    }
+    cout << endl;
+    
 }
 
 
@@ -134,38 +153,67 @@ void EA::Initalize_Agent()
 //Initalizes the goal plane
 void EA::Initalize_Goal()
 {
-    goal_1.push_back((rand() / double(RAND_MAX))*(pP->x_max));
-    goal_1.push_back((rand() / double(RAND_MAX))*(pP->y_max));
+    goal_line.empty();
+    goal_line.push_back((rand() / double(RAND_MAX))*(pP->x_max));
+    goal_line.push_back((rand() / double(RAND_MAX))*(pP->y_max));
     
-    goal_2.push_back(goal_1.at(0));
-    goal_2.push_back(goal_1.at(1)+5);
-    if (goal_2.at(1)>pP->x_max)
+    goal_line.push_back(goal_line.at(0));
+    goal_line.push_back(goal_line.at(1)-10);
+    if (goal_line.at(3)>0)
     {
-        goal_2.at(1) = goal_1.at(1)-5;
+        goal_line.at(0) = goal_line.at(1)+10;
     }
-    goal_1.at(0) = 50;
-    goal_1.at(1) = 45;
-    goal_2.at(0) = 50;
-    goal_2.at(1) = 55;
-    assert(goal_1.at(0)>=0 && goal_1.at(0)<=pP->x_max);
-    assert(goal_1.at(1)>=0 && goal_1.at(1)<=pP->y_max);
-    assert(goal_2.at(0)>=0 && goal_2.at(0)<=pP->x_max);
-    assert(goal_2.at(1)>=0 && goal_2.at(1)<=pP->y_max);
+    goal_line.at(0) = 50;
+    goal_line.at(1) = 55;
+    goal_line.at(2) = 50;
+    goal_line.at(3) = 45;
+    assert(goal_line.at(0)>=0 && goal_line.at(0)<=pP->x_max);
+    assert(goal_line.at(1)>=0 && goal_line.at(1)<=pP->y_max);
+    assert(goal_line.at(0)>=0 && goal_line.at(0)<=pP->x_max);
+    assert(goal_line.at(1)>=0 && goal_line.at(1)<=pP->y_max);
     
-    goal_mid.push_back(goal_1.at(0));
+    goal_mid.empty();
+    goal_mid.push_back(goal_line.at(0));
     double min = 0;
-    if (goal_1.at(1) < goal_2.at(1))
+    if (goal_line.at(1) < goal_line.at(3))
     {
-        min = goal_1.at(1);
+        min = goal_line.at(1);
     }
     else
     {
-        min = goal_2.at(1);
+        min = goal_line.at(3);
     }
-    goal_mid.push_back((abs(goal_1.at(1)-goal_2.at(1))/2)+min);
-    cout << "Goal_mid Location" << endl;
-    cout << goal_mid.at(0) << "\t" << goal_mid.at(1) << endl;
+    goal_mid.push_back((abs(goal_line.at(1)-goal_line.at(3))/2)+min);
+    cout << "Goal Location" << endl;
+    cout << "Goal_1" << "\t" << goal_line.at(0) << "\t" << goal_line.at(1) << endl;
+    cout << "Goal_2" << "\t" << goal_line.at(2) << "\t" << goal_line.at(3) << endl;
+    cout << "Goal-mid" << "\t" << goal_mid.at(0) << "\t" << goal_mid.at(1) << endl;
     cout << endl;
+    Create_Goal_Box();
+}
+
+
+//-----------------------------------------------------------
+//Creates a box around the goal
+void EA::Create_Goal_Box()
+{
+    goal_box.empty();
+    goal_box.push_back(goal_mid.at(0)-pP->v*pP->dt);
+    goal_box.push_back(goal_mid.at(1)+5);
+    goal_box.push_back(goal_mid.at(0)+pP->v*pP->dt);
+    goal_box.push_back(goal_mid.at(1)+5);
+    goal_box.push_back(goal_mid.at(0)-pP->v*pP->dt);
+    goal_box.push_back(goal_mid.at(1)-5);
+    goal_box.push_back(goal_mid.at(0)+pP->v*pP->dt);
+    goal_box.push_back(goal_mid.at(1)-5);
+    
+    cout << "Goal Box" << "\t";
+    for (int i=0; i<8; i++)
+    {
+        cout << goal_box.at(i) << "\t";
+    }
+    cout << endl;
+
 }
 
 
@@ -181,9 +229,9 @@ void EA::Run_Simulation()
         S.pP = this->pP;
         Policy* pPo;
         pPo = & indiv.at(0).pol.at(p);
-        S.Simulate(pPo, goal_mid);
+        S.Simulate(pPo, goal_line, goal_mid, goal_box);
     }
-    cout << "cp" << endl;
+    //cout << "cp" << endl;
 }
 
 
@@ -217,6 +265,7 @@ int EA::Binary_Select()
         loser = index_1;
         assert(indiv.at(0).pol.at(index_1).fitness >= indiv.at(0).pol.at(index_2).fitness);
     }
+    //cout << loser << endl;
     return loser;
 }
 

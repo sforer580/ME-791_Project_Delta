@@ -24,8 +24,9 @@ public:
     vector<double> weights;
     double fitness;
 
-    int in_map = 0;                 //0=true, 1=false
-    int reached_goal = 1;           //0=true, 1=false
+    int in_map = 1;                 //0=false, 1=true
+    int in_goal_box = 0;            //0=false, 1=true
+    int reached_goal = 0;           //0=false, 1=true
     
     vector<double> angle_error;
     
