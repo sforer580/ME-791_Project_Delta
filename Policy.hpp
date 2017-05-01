@@ -36,6 +36,7 @@ public:
     vector<double> omega;                   //[radians/second]
     vector<double> dist_to_goal;            //[length]
     vector<double> u;
+    int total_time_steps;
 };
 
 #endif /* Policy_hpp */
